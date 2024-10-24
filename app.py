@@ -1,75 +1,48 @@
-import os
 import streamlit as st
-from groq import Groq
+import os
+from groq.client import Groq
 
-# Initialize Groq client with API key from environment variable
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# Initialize Groq client using the API key (replace with your actual API key)
+client = Groq(api_key="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")
 
-# Function to get feedback from Groq API
+# Function to get feedback from the Groq model
 def get_feedback(user_essay, level):
-    # Define the system prompt for essay feedback
-    system_prompt = """
-    You are an expert academic writer with 40 years of experience in providing concise but effective feedback.
-    Instead of asking the student to do this and that, you just say replace this with this to improve in a concise manner.
-    You provide concise grammar mistakes, saying replace this with this along with mistake type. 
-    You also provide specific replacement sentences for cohesion and abstraction, and you point out all the vocabulary saying replace this word with this.
-    You have to analyze the writing for grammar, cohesion, sentence structure, vocabulary, and the use of simple, complex, and compound sentences, as well as the effectiveness of abstraction.
-    Provide detailed feedback on any mistakes and present an improved version of the writing.
-    Do not use words such as dive, discover, uncover, delve, tailor, equipped, navigate, landscape, delve, magic, comprehensive embrace, well equipped, unleash, cutting edge, harness.
-    Strictly follow academic style in writing. Change the sentences according to English standards if needed but do not add any sentences by yourself.
-    Give feedback for different levels: A1 for beginners, A2 for average, A3 for advanced, up to C1 level.
-    """
-
-    # Sending the essay and level to Groq API
-    response = client.chat.completions.create(
-        messages=[
-            {
-                "role": "user",
-                "content": f"{system_prompt}\nEssay:\n{user_essay}\nLevel: {level}"
-            }
-        ],
-        model="llama3-8b-8192"
+    # Example of sending the essay to Groq's API (you will need to adjust this based on Groq's API)
+    response = client.completions.create(
+        prompt=f"Analyze this essay for {level} level English: {user_essay}",
+        max_tokens=1000
     )
-    
-    # Extract feedback from API response
-    feedback = response.choices[0].message.content
+    feedback = response["choices"][0]["text"]
     return feedback
 
-# Streamlit UI
-st.title("Writing Assistant for IELTS/TOEFL/DET Preparation")
+# Streamlit app UI
+st.title("Essay Writing Assistant for IELTS, DET, and TOEFL")
 
-# Sidebar for selecting a plan
-st.sidebar.title("Select Your Writing Plan")
-plan = st.sidebar.radio("Choose a Plan", ("30 Days Plan", "45 Days Plan", "60 Days Plan"))
+# Dropdown for selecting the plan
+plan = st.selectbox("Select Your Plan", ["30 Days Plan", "45 Days Plan", "60 Days Plan"])
 
-# Display plan details
-if plan == "30 Days Plan":
-    st.sidebar.write("Write every day for 30 days and get daily feedback on your essays.")
-elif plan == "45 Days Plan":
-    st.sidebar.write("Write every day for 45 days and improve your writing progressively.")
-else:
-    st.sidebar.write("A comprehensive 60 days writing improvement plan for advanced learners.")
+# Display the current day of the plan
+st.write(f"Today's essay prompt for the {plan}:")
 
-# Show the current day based on the selected plan (for simplicity, showing Day 1 here)
-st.subheader(f"Day 1 of {plan}")
-st.write("Topic: Discuss a recent technological advancement and its impact on society.")
-
-# Textbox for the user to input their essay
+# Text area for students to write their essay
 user_essay = st.text_area("Write your essay here:", height=300)
 
-# Dropdown to select proficiency level
-level = st.selectbox("Select your proficiency level:", ["A1 (Beginner)", "A2 (Average)", "B1", "B2", "C1 (Advanced)"])
+# Dropdown to select student's English proficiency level
+level = st.selectbox("Select your English proficiency level", ["A1", "A2", "B1", "B2", "C1"])
 
-# Button to submit essay for feedback
-if st.button("Submit for Feedback"):
-    if user_essay.strip():
-        st.write("Analyzing your essay...")
-
-        # Get feedback using the get_feedback function
-        feedback = get_feedback(user_essay, level)
-        
-        # Display the feedback provided by the model
-        st.subheader("Feedback on your essay:")
-        st.write(feedback)
+# Submit button
+if st.button("Submit"):
+    if user_essay.strip() == "":
+        st.error("Please write your essay before submitting!")
     else:
-        st.warning("Please write your essay before submitting!")
+        # Fetch feedback from Groq API
+        try:
+            feedback = get_feedback(user_essay, level)
+            st.success("Feedback received!")
+            st.write(feedback)
+        except Exception as e:
+            st.error(f"Error fetching feedback: {e}")
+
+# Instruction for deploying Streamlit (in case of Google Colab use)
+st.write("To view this app in a browser, run with:")
+st.code("!streamlit run app.py & npx localtunnel --port 8501")
